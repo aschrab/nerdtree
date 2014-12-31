@@ -105,7 +105,13 @@ endfunction
 "FUNCTION: s:activateBookmark() {{{1
 "handle the user activating a bookmark
 function! s:activateBookmark(bm)
-    call a:bm.activate(!a:bm.path.isDirectory ? {'where': 'p'} : {})
+    try
+        let path = a:bm.GetPath()
+    catch /^NERDTree.InvalidArgumentsError/
+        call nerdtree#echo( "Bookmarked location not found" )
+        return
+    endtry
+    call a:bm.activate(!path.isDirectory ? {'where': 'p'} : {})
 endfunction
 
 " FUNCTION: nerdtree#ui_glue#bookmarkNode(name) {{{1
@@ -448,7 +454,7 @@ function! nerdtree#ui_glue#openBookmark(name)
     catch /^NERDTree.BookmarkedNodeNotFoundError/
         call nerdtree#echo("note - target node is not cached")
         let bookmark = g:NERDTreeBookmark.BookmarkFor(a:name)
-        let targetNode = g:NERDTreeFileNode.New(bookmark.path)
+        let targetNode = g:NERDTreeFileNode.New(bookmark.GetPath())
     endtry
     if targetNode.path.isDirectory
         call targetNode.openExplorer()

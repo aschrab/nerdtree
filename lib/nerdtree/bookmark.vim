@@ -89,7 +89,7 @@ function! s:Bookmark.CacheBookmarks(silent)
                 let path = substitute(i, '^.\{-} \(.*\)$', '\1', '')
 
                 try
-                    let bookmark = s:Bookmark.New(name, g:NERDTreePath.New(path))
+                    let bookmark = s:Bookmark.New(name, path)
                     call add(g:NERDTreeBookmarks, bookmark)
                 catch /^NERDTree.InvalidArgumentsError/
                     call add(g:NERDTreeInvalidBookmarks, i)
@@ -133,6 +133,7 @@ function! s:Bookmark.delete()
     catch /^NERDTree.BookmarkedNodeNotFoundError/
     endtry
     call remove(s:Bookmark.Bookmarks(), index(s:Bookmark.Bookmarks(), self))
+    " FIXME: Remove following condition block?
     if !empty(node)
         call node.path.cacheDisplayString()
     endif
@@ -147,7 +148,7 @@ endfunction
 " tree root, or the highest cached node
 function! s:Bookmark.getNode(searchFromAbsoluteRoot)
     let searchRoot = a:searchFromAbsoluteRoot ? g:NERDTreeDirNode.AbsoluteTreeRoot() : b:NERDTreeRoot
-    let targetNode = searchRoot.findNode(self.path)
+    let targetNode = searchRoot.findNode(self.GetPath())
     if empty(targetNode)
         throw "NERDTree.BookmarkedNodeNotFoundError: no node was found for bookmark: " . self.name
     endif
@@ -161,7 +162,10 @@ function! s:Bookmark.GetNodeForName(name, searchFromAbsoluteRoot)
     let bookmark = s:Bookmark.BookmarkFor(a:name)
     return bookmark.getNode(a:searchFromAbsoluteRoot)
 endfunction
-
+" FUNCTION: Bookmark.GetPath() {{{1
+function! s:Bookmark.GetPath()
+    return g:NERDTreePath.New(self.path)
+endfunction
 " FUNCTION: Bookmark.GetSelected() {{{1
 " returns the Bookmark the cursor is over, or {}
 function! s:Bookmark.GetSelected()
@@ -189,6 +193,8 @@ endfunction
 
 " FUNCTION: Bookmark.mustExist() {{{1
 function! s:Bookmark.mustExist()
+    " FIXME: Just returning isn't a good solution
+    return
     if !self.path.exists()
         call s:Bookmark.CacheBookmarks(1)
         throw "NERDTree.BookmarkPointsToInvalidLocationError: the bookmark \"".
@@ -222,10 +228,11 @@ endfunction
 function! s:Bookmark.open(...)
     let opts = a:0 ? a:1 : {}
 
-    if self.path.isDirectory && !has_key(opts, 'where')
+    let path = self.GetPath()
+    if path.isDirectory && !has_key(opts, 'where')
         call self.toRoot()
     else
-        let opener = g:NERDTreeOpener.New(self.path, opts)
+        let opener = g:NERDTreeOpener.New(path, opts)
         call opener.open(self)
     endif
 endfunction
@@ -258,7 +265,12 @@ function! s:Bookmark.str()
         let pathStrMaxLen = pathStrMaxLen - &numberwidth
     endif
 
-    let pathStr = self.path.str({'format': 'UI'})
+    try
+        let pathStr = self.GetPath().str({'format': 'UI'})
+    catch
+        let pathStr = '(Unavailable)'
+    endtry
+
     if len(pathStr) > pathStrMaxLen
         let pathStr = '<' . strpart(pathStr, len(pathStr) - pathStrMaxLen)
     endif
@@ -272,7 +284,7 @@ function! s:Bookmark.toRoot()
         try
             let targetNode = self.getNode(1)
         catch /^NERDTree.BookmarkedNodeNotFoundError/
-            let targetNode = g:NERDTreeFileNode.New(s:Bookmark.BookmarkFor(self.name).path)
+            let targetNode = g:NERDTreeFileNode.New(s:Bookmark.BookmarkFor(self.name).GetPath())
         endtry
         call targetNode.makeRoot()
         call b:NERDTree.render()
@@ -289,6 +301,8 @@ endfunction
 
 " FUNCTION: Bookmark.validate() {{{1
 function! s:Bookmark.validate()
+    " FIXME: Eliminate calls or come up with better fix
+    return 1
     if self.path.exists()
         return 1
     else
@@ -304,7 +318,7 @@ endfunction
 function! s:Bookmark.Write()
     let bookmarkStrings = []
     for i in s:Bookmark.Bookmarks()
-        call add(bookmarkStrings, i.name . ' ' . i.path.str())
+        call add(bookmarkStrings, i.name . ' ' . i.path)
     endfor
 
     "add a blank line before the invalid ones

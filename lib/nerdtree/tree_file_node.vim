@@ -24,7 +24,7 @@ function! s:TreeFileNode.bookmark(name)
     catch /^NERDTree.BookmarkedNodeNotFoundError/
     endtry
 
-    call g:NERDTreeBookmark.AddBookmark(a:name, self.path)
+    call g:NERDTreeBookmark.AddBookmark(a:name, self.path.str())
     call self.path.cacheDisplayString()
     call g:NERDTreeBookmark.Write()
 
@@ -47,6 +47,8 @@ endfunction
 
 "FUNCTION: TreeFileNode.clearBookmarks() {{{1
 function! s:TreeFileNode.clearBookmarks()
+    " FIXME: Find better fix
+    return
     for i in g:NERDTreeBookmark.Bookmarks()
         if i.path.equals(self.path)
             call i.delete()

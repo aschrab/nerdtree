@@ -43,11 +43,12 @@ function! s:Path.cacheDisplayString() abort
     endif
 
     let self._bookmarkNames = []
-    for i in g:NERDTreeBookmark.Bookmarks()
-        if i.path.equals(self)
-            call add(self._bookmarkNames, i.name)
-        endif
-    endfor
+" FIXME: Check do for bookmarks where path exists
+"    for i in g:NERDTreeBookmark.Bookmarks()
+"        if i.path.equals(self)
+"            call add(self._bookmarkNames, i.name)
+"        endif
+"    endfor
     if !empty(self._bookmarkNames)
         let self.cachedDisplayString .= ' {' . join(self._bookmarkNames) . '}'
     endif

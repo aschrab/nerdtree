@@ -226,7 +226,7 @@ endfunction
 function! s:Creator._pathForString(str)
     let path = {}
     if g:NERDTreeBookmark.BookmarkExistsFor(a:str)
-        let path = g:NERDTreeBookmark.BookmarkFor(a:str).path
+        let path = g:NERDTreeBookmark.BookmarkFor(a:str).GetPath()
     else
         let dir = a:str ==# '' ? getcwd() : a:str
 
